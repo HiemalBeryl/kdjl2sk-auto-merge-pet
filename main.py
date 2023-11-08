@@ -207,13 +207,12 @@ while if_start or len(sub_pet_ids) > 0:
         if id == merge_main_pet.get('宠物序号', 0):
             sub_pet_ids.remove(id)
     ## 通过是否存在'抵消'字段区分背包和牧场宠物
-    for pet in pet_list:
-        if '抵消' in pet:
-            changePetToFirst(pet.get('宠物序号', 0))
-            # 携带合成主宠
-            carryPet(merge_main_pet.get("宠物序号", 0))
-            changePetToFirst(merge_main_pet.get("宠物序号", 0))
-            break
+    pack_pet = getPetList('pack')
+    changePetToFirst(pack_pet[0].get('宠物序号', 0))
+    for pet in pack_pet[1:]:
+        sendPet(pet.get("宠物序号", 0))
+    carryPet(merge_main_pet.get("宠物序号", 0))
+    changePetToFirst(merge_main_pet.get("宠物序号", 0))
     pack_pet = getPetList('pack')
     for pet in pack_pet:
         if pet.get("宠物序号", 0) != merge_main_pet.get("宠物序号", 0):
