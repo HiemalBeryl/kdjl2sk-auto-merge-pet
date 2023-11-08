@@ -75,9 +75,14 @@ def login(username: str, password: str):
         return True
     else:
         login_url = f"http://2.shikong.info:8089/api/login?username={username}&password={password}"
-        response = httpx.get(login_url, headers=headers)
-        print(response.text.strip('\"'))
-        cookie_dict['u2'] = response.text.strip('\"')
+        response = httpx.get(login_url, headers=headers, timeout=8.0)
+        login_status = response.text.strip('\"')
+        print(login_status)
+        if login_status == '登录失败！操作繁忙！':
+            time.sleep(10 + random.random() * 2)
+            response = httpx.get(login_url, headers=headers, timeout=8.0)
+            login_status = response.text.strip('\"')
+        cookie_dict['u2'] = login_status
         print(cookie_dict)
         with open("userdata.txt", 'w', encoding='utf-8') as userdata:
             userdata.write(str(cookie_dict))
