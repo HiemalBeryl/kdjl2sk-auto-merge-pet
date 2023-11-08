@@ -249,4 +249,3 @@ while if_start or len(sub_pet_ids) > 0:
             levelUpPet()
             # TODO:判断是否出神宠
         time.sleep(4.0 + random.random() * 2)
-        sub_pet_ids = []
