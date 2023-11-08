@@ -92,7 +92,7 @@ def testLoginStatus(cookies: dict) -> bool:
     init_cookies(cookie_dict)
     print(cookie_dict)
     url = f"http://2.shikong.info:8089/api/getMapInfo?username=username={cookie_dict['u1']}&password={cookie_dict['u2']}&random={random.random()}&mapID=1"
-    response = httpx.get(url, headers=headers, cookies=cookie)
+    response = httpx.get(url, headers=headers, cookies=cookie, timeout=8.0)
     if response.text.find("message") > -1:
         return False
     return True
@@ -101,7 +101,7 @@ def testLoginStatus(cookies: dict) -> bool:
 def getPetList(type: str = 'p') -> list:
     # type -p为仓库 -pack为背包
     get_pet_list_url = f"http://2.shikong.info:8089/api/getPetList?username={cookie_dict['u1']}&password={cookie_dict['u2']}&Type={type}&random={random.random}"
-    response = httpx.get(get_pet_list_url, headers=headers, cookies=cookie)
+    response = httpx.get(get_pet_list_url, headers=headers, cookies=cookie, timeout=8.0)
     result = response.text.strip('\"').replace("\\", "")
     if type == 'pack':
         result = '[' + extract_content_between_brackets(result) + ']'
@@ -113,35 +113,35 @@ def getPetList(type: str = 'p') -> list:
 
 def carryPet(id: int):
     carry_pet_url = f"http://2.shikong.info:8089/api/getPet?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&random={random.random}"
-    response = httpx.get(carry_pet_url, headers=headers, cookies=cookie)
+    response = httpx.get(carry_pet_url, headers=headers, cookies=cookie, timeout=8.0)
     result = response.text.strip('\"').replace("\\", "")
     print(result)
 
 
 def sendPet(id: int):
     sent_pet_url = f"http://2.shikong.info:8089/api/addPasture?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&random={random.random}"
-    response = httpx.get(sent_pet_url, headers=headers, cookies=cookie)
+    response = httpx.get(sent_pet_url, headers=headers, cookies=cookie, timeout=8.0)
     result = response.text.strip('\"').replace("\\", "")
     print(result)
 
 
 def changePetToFirst(id: int):
     change_pet_to_first_url = f"http://2.shikong.info:8089/api/getJH?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&random={random.random}"
-    response = httpx.get(change_pet_to_first_url, headers=headers, cookies=cookie)
+    response = httpx.get(change_pet_to_first_url, headers=headers, cookies=cookie, timeout=8.0)
     result = response.text.strip('\"').replace("\\", "")
     print(result)
 
 
 def useProperty(id: int):
     use_property_url = f"http://2.shikong.info:8089/api/useProp?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&random={random.random}"
-    response = httpx.get(use_property_url, headers=headers, cookies=cookie)
+    response = httpx.get(use_property_url, headers=headers, cookies=cookie, timeout=8.0)
     result = response.text.strip('\"').replace("\\", "")
     print(result)
 
 
 def mergePet(id: int, id1: int, pid: int, pid1:int):
     merge_pet_url = f"http://2.shikong.info:8089/api/Hecheng?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&id1={id1}&pid={pid}&pid1={pid1}&random={random.randint(1000000,9999999)}"
-    response = httpx.get(merge_pet_url, headers=headers, cookies=cookie)
+    response = httpx.get(merge_pet_url, headers=headers, cookies=cookie, timeout=8.0)
     result = response.text.strip('\"').replace("\\", "")
     print(result)
     if result.find("恭喜您") != -1:
