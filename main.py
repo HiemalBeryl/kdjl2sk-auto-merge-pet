@@ -154,6 +154,16 @@ def mergePet(id: int, id1: int, pid: int, pid1:int):
     return False
 
 
+def divinePet(id: int, id1: int, np: int, pid: int, pid1: int):
+    divine_pet_url = f'''http://2.shikong.info:8089/api/Niepang?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&id1={id1}&pid={pid}&pid1={pid1}&np={np}&random={random.randint(1000000,9999999)}'''
+    response = httpx.get(divine_pet_url)
+    result = response.text.strip('\"').replace("\\", "")
+    print(result)
+    if result.find("恭喜您") != -1:
+        return True
+    return False
+
+
 # 检查等级，使用背包中所有宠物使用经验道具
 # TODO: 经验道具是否用完的检查
 def levelUpPet():
