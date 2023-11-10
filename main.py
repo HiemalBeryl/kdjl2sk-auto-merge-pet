@@ -3,7 +3,7 @@ import time
 import httpx
 from httpx import Cookies
 import random
-import re
+from typing import List, Dict, Tuple
 
 headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 '
@@ -184,53 +184,55 @@ def levelUpPet():
             break
 
 
-#选出主宠
-def chooseMergePet():
-    pass
+# 刷新合宠列表
+# 1. 只要主宠列表：选出五系宠中成长最高的（被排除的不算）
+# 2. 只要副宠列表：需要提供主宠，如果不提供方法默认执行失败；从符合条件的宠物（比如海鲜）中选择，返回剔除掉主宠和排除宠后的结果
+# 3. 主副宠都要：上述两过程结合
+# TODO:获取合成副宠，默认为海鲜
+def chooseMergePet(type: str = 'main', main_pet_id: str = None, sub_pet_names: List[str] = None) -> Tuple[Dict, List[Dict]]:
+    # 获取宠物列表，筛选出属性为五行的宠物
+    pet_list = getPetList()
+    pet_list.extend(getPetList('pack'))
+    temp_list = []
+    for pet in pet_list:
+        # 排除设置的宠物 或 属性不为五行的宠物
+        if isinstance(pet["类型缓存"], list) and pet["类型缓存"]["系别"] in wuxing:
+            temp_list.append(pet)
+        elif pet.get('五行', '') in wuxing:
+            temp_list.append(pet)
+    pet_list = []
+    for pet in temp_list:
+        if pet.get('宠物序号', '') not in merge_pet_except:
+            pet_list.append(pet)
+    print(f'筛选后的宠物1：{temp_list}')
+    print(f'筛选后的宠物2：{pet_list}')
+    # 进行主宠副宠的选择
+    merge_main_pet = {}
+    for pet in pet_list:
+        # 获取合成主宠，默认为五行为金木水火土中成长最高的
+        if pet.get('成长', 0) > merge_main_pet.get('成长', 0):
+            merge_main_pet = pet
+    pet_list.remove(merge_main_pet)
+    print(f'主宠：{merge_main_pet}')
+    print(f'副宠：{pet_list}')
+    if type == 'main':
+        return merge_main_pet
+    elif type == 'sub':
+        return pet_list
+    elif type == 'main,sub':
+        return merge_main_pet, pet_list
+    return {}, []
 
 
 # 登录
 login(cookie_dict['u1'], cookie_dict['u3'])
-
+chooseMergePet()
 while if_start or len(sub_pet_list) > 0:
     if_start = False
-    # 获取宠物列表，整理并带出出主宠和副宠
+    # 获取宠物列表
     pet_list = getPetList()
     pet_list.extend(getPetList('pack'))
-    for pet in pet_list:
-        # 获取合成主宠，默认为五行为金木水火土中成长最高的
-        if isinstance(pet["类型缓存"], list) and pet["类型缓存"]["系别"] in wuxing:
-            if pet.get('成长', 0) > merge_main_pet.get('成长', 0):
-                merge_main_pet = pet
-        elif pet.get('五行', '') in wuxing:
-            if pet.get('成长', 0) > merge_main_pet.get('成长', 0):
-                merge_main_pet = pet
-
-        # 获取合成副宠，默认为海鲜
-        if isinstance(pet["类型缓存"], list) and pet['类型缓存']['宠物名字'] in haixian:
-            sub_pet_list.append(pet)
-        elif pet.get("宠物名字", "") in haixian:
-            sub_pet_list.append(pet)
-    # 从海鲜中剔除主宠（存在主宠是海鲜的情况）
-    for pet in sub_pet_list:
-        if pet.get('宠物序号', -1) == merge_main_pet.get('宠物序号', 0):
-            sub_pet_list.remove(pet)
-    # 从将要被合成的主宠和副宠中剔除手动添加的排除宠物
-    # 如果主宠被剔除，那么选择副宠中成长最高的作为主宠
-    for pet_id in merge_pet_except:
-        if pet_id == merge_main_pet.get("宠物序号", 0):
-            merge_main_pet = {}
-            for new_pet in sub_pet_list:
-                if new_pet.get('成长', 0) > merge_main_pet.get('成长', -1):
-                    merge_main_pet = new_pet
-    sub_pet_list.remove(merge_main_pet)
-    # 直接剔除副宠
-    for pet_id in merge_pet_except:
-        for sub_pet in sub_pet_list:
-            if sub_pet.get("宠物序号", -1) == pet_id:
-                sub_pet_list.remove(sub_pet)
-    print(f'副宠：{sub_pet_list}')
-    print(f'主宠：{merge_main_pet}')
+    merge_main_pet, sub_pet_list = chooseMergePet('main,sub')
     # 整理背包宠物，带出一主宠两副宠
     pack_pet = getPetList('pack')
     changePetToFirst(pack_pet[0].get('宠物序号', 0))
@@ -268,8 +270,9 @@ while if_start or len(sub_pet_list) > 0:
         #                     merge_property_use[1])
         if flag:
             # 合成成功后更新宠物背包
+            # TODO:合成后更新合成主宠
             pack_pet = getPetList('pack')
             to_merge_sub_pet.pop(0)
             levelUpPet()
-            # TODO:判断是否出神宠
+            # TODO:判断是否出神宠(比如提前出神或百变出神)
         time.sleep(4.0 + random.random() * 2)
