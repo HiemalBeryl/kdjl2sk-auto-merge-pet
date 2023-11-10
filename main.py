@@ -20,9 +20,10 @@ wuxing = ['金', '木', '水', '火', '土']
 exp_use = [52]
 # 目前天神31，三星成长魂石26，百变国庆66
 merge_property_use = [31, 26, 66]
-sub_pet_ids = []
+sub_pet_list = []
 to_merge_sub_pet = []
 merge_main_pet = {}
+merge_pet_except : List[str] = ['19']
 pack_pet = []
 divine_pet_except = ['炽天使', '玛雅宝宝', '安吉', '海之音', '双翼天使妖妖', '音速瑾', '青影龙', '仲裁', '影娅瑟',
                      '蜡笔', '兔儿啾啾', '自然女神', '圣火麒麟', '亲吻鱼', '琉璃狐仙', '铁骑战', '召唤之龙', '白虎女神',
@@ -191,7 +192,7 @@ def chooseMergePet():
 # 登录
 login(cookie_dict['u1'], cookie_dict['u3'])
 
-while if_start or len(sub_pet_ids) > 0:
+while if_start or len(sub_pet_list) > 0:
     if_start = False
     # 获取宠物列表，整理并带出出主宠和副宠
     pet_list = getPetList()
@@ -207,16 +208,30 @@ while if_start or len(sub_pet_ids) > 0:
 
         # 获取合成副宠，默认为海鲜
         if isinstance(pet["类型缓存"], list) and pet['类型缓存']['宠物名字'] in haixian:
-            sub_pet_ids.append(pet['宠物序号'])
+            sub_pet_list.append(pet)
         elif pet.get("宠物名字", "") in haixian:
-            sub_pet_ids.append(pet['宠物序号'])
-    print(sub_pet_ids)
-    print(merge_main_pet)
-    ## 从海鲜中剔除主宠（存在主宠是海鲜的情况）
-    for id in sub_pet_ids:
-        if id == merge_main_pet.get('宠物序号', 0):
-            sub_pet_ids.remove(id)
-    ## 通过是否存在'抵消'字段区分背包和牧场宠物
+            sub_pet_list.append(pet)
+    # 从海鲜中剔除主宠（存在主宠是海鲜的情况）
+    for pet in sub_pet_list:
+        if pet.get('宠物序号', -1) == merge_main_pet.get('宠物序号', 0):
+            sub_pet_list.remove(pet)
+    # 从将要被合成的主宠和副宠中剔除手动添加的排除宠物
+    # 如果主宠被剔除，那么选择副宠中成长最高的作为主宠
+    for pet_id in merge_pet_except:
+        if pet_id == merge_main_pet.get("宠物序号", 0):
+            merge_main_pet = {}
+            for new_pet in sub_pet_list:
+                if new_pet.get('成长', 0) > merge_main_pet.get('成长', -1):
+                    merge_main_pet = new_pet
+    sub_pet_list.remove(merge_main_pet)
+    # 直接剔除副宠
+    for pet_id in merge_pet_except:
+        for sub_pet in sub_pet_list:
+            if sub_pet.get("宠物序号", -1) == pet_id:
+                sub_pet_list.remove(sub_pet)
+    print(f'副宠：{sub_pet_list}')
+    print(f'主宠：{merge_main_pet}')
+    # 整理背包宠物，带出一主宠两副宠
     pack_pet = getPetList('pack')
     changePetToFirst(pack_pet[0].get('宠物序号', 0))
     for pet in pack_pet[1:]:
@@ -227,14 +242,14 @@ while if_start or len(sub_pet_ids) > 0:
     for pet in pack_pet:
         if pet.get("宠物序号", 0) != merge_main_pet.get("宠物序号", 0):
             sendPet(pet.get("宠物序号", 0))
-    if len(sub_pet_ids) >= 2:
-        to_merge_sub_pet.append(sub_pet_ids.pop())
-        to_merge_sub_pet.append(sub_pet_ids.pop())
-        carryPet(to_merge_sub_pet[0])
-        carryPet(to_merge_sub_pet[1])
-    elif len(sub_pet_ids) == 1:
-        to_merge_sub_pet.append(sub_pet_ids.pop())
-        carryPet(to_merge_sub_pet[0])
+    if len(sub_pet_list) >= 2:
+        to_merge_sub_pet.append(sub_pet_list.pop())
+        to_merge_sub_pet.append(sub_pet_list.pop())
+        carryPet(to_merge_sub_pet[0].get('宠物序号', 0))
+        carryPet(to_merge_sub_pet[1].get('宠物序号', 0))
+    elif len(sub_pet_list) == 1:
+        to_merge_sub_pet.append(sub_pet_list.pop())
+        carryPet(to_merge_sub_pet[0].get('宠物序号', 0))
     else:
         raise ValueError("所有宠物已合成完毕！")
 
@@ -245,12 +260,12 @@ while if_start or len(sub_pet_ids) > 0:
     # 合成宠物
     # TODO:判断合成道具是否足够
     while len(to_merge_sub_pet) > 0:
-        if merge_main_pet.get('成长', 0) < 56.5:
-            flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0], merge_property_use[0],
+        if merge_main_pet.get('成长', 0) < 111:
+            flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0].get('宠物序号', 0), merge_property_use[0],
                             merge_property_use[1])
-        elif merge_main_pet.get('成长', 0) >= 56.5:
-            flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0], merge_property_use[2],
-                            merge_property_use[1])
+        # elif merge_main_pet.get('成长', 0) >= 56.5:
+        #     flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0].get('宠物序号', 0), merge_property_use[2],
+        #                     merge_property_use[1])
         if flag:
             # 合成成功后更新宠物背包
             pack_pet = getPetList('pack')
