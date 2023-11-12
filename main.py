@@ -224,6 +224,46 @@ def chooseMergePet(type: str = 'main', main_pet_id: str = None, sub_pet_names: L
     return {}, []
 
 
+# 整理背包宠物，带出指定的宠物，将其他宠物放回牧场
+def collationPet(carry_pet_list: List = None):
+    if len(carry_pet_list) > 3:
+        raise ValueError("不能携带超过三只宠物！")
+    pack_pet = getPetList('pack')
+    changePetToFirst(pack_pet[0].get('宠物序号', 0))
+    # 提取携带宠物的序号
+    carry_pet_ids = []
+    for carry_pet in carry_pet_list:
+        carry_pet_ids.append(carry_pet.get('宠物序号', 0))
+    # 判断背包中是否存在携带宠物，如果存在则从背包列表和携带宠物列表中剔除
+    temp_main_pet_id = None
+    for pet in pack_pet:
+        if pet.get('宠物序号', 0) in carry_pet_ids:
+            temp_main_pet_id = pet.get('宠物序号', 0)
+            for carry_pet in carry_pet_list:
+                if carry_pet.get('宠物序号', 0) == temp_main_pet_id:
+                    carry_pet_list.remove(carry_pet)
+            pack_pet.remove(pet)
+    # 先选定主战宠物，再把背包其他宠物放回牧场，最后携带宠物
+    # 如果存在被剔除的宠物，那么最后被剔除的宠物将作为主站宠物，不会被放到牧场
+    if temp_main_pet_id is not None:
+        changePetToFirst(temp_main_pet_id)
+    else:
+        changePetToFirst(pack_pet[0].get('宠物序号', 0))
+    # 放入牧场
+    for pet in pack_pet:
+        sendPet(pet.get("宠物序号", 0))
+    # 携带出第一只宠物，判断原先的主战宠是否要被放入牧场
+    carryPet(carry_pet_list[0].get("宠物序号", 0))
+    changePetToFirst(carry_pet_list[0].get('宠物序号', 0))
+    if temp_main_pet_id is None:
+        pack_pet = getPetList('pack')
+        for pet in pack_pet:
+            sendPet(pet.get('宠物序号', 0))
+    # 带出剩余宠物
+    for carry_pet in carry_pet_list[1:]:
+        carryPet(carry_pet.get('宠物序号', 0))
+
+
 # 登录
 login(cookie_dict['u1'], cookie_dict['u3'])
 chooseMergePet()
@@ -233,27 +273,17 @@ while if_start or len(sub_pet_list) > 0:
     pet_list = getPetList()
     pet_list.extend(getPetList('pack'))
     merge_main_pet, sub_pet_list = chooseMergePet('main,sub')
-    # 整理背包宠物，带出一主宠两副宠
-    pack_pet = getPetList('pack')
-    changePetToFirst(pack_pet[0].get('宠物序号', 0))
-    for pet in pack_pet[1:]:
-        sendPet(pet.get("宠物序号", 0))
-    carryPet(merge_main_pet.get("宠物序号", 0))
-    changePetToFirst(merge_main_pet.get("宠物序号", 0))
-    pack_pet = getPetList('pack')
-    for pet in pack_pet:
-        if pet.get("宠物序号", 0) != merge_main_pet.get("宠物序号", 0):
-            sendPet(pet.get("宠物序号", 0))
+    # 整理宠物背包，携带合成宠物
     if len(sub_pet_list) >= 2:
         to_merge_sub_pet.append(sub_pet_list.pop())
         to_merge_sub_pet.append(sub_pet_list.pop())
-        carryPet(to_merge_sub_pet[0].get('宠物序号', 0))
-        carryPet(to_merge_sub_pet[1].get('宠物序号', 0))
     elif len(sub_pet_list) == 1:
         to_merge_sub_pet.append(sub_pet_list.pop())
-        carryPet(to_merge_sub_pet[0].get('宠物序号', 0))
     else:
         raise ValueError("所有宠物已合成完毕！")
+    to_collation_pets = [merge_main_pet]
+    to_collation_pets.extend(to_merge_sub_pet)
+    collationPet(to_collation_pets)
 
     # 检查等级，使用经验道具
     levelUpPet()
