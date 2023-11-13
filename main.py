@@ -165,6 +165,16 @@ def divinePet(id: int, id1: int, np: int, pid: int, pid1: int):
     return False
 
 
+def evolvePet(id: int, flag: int = 1):
+    url = f"http://2.shikong.info:8089/api/JinHua?username={cookie_dict['u1']}&password={cookie_dict['u2']}&id={id}&flag={flag}&random={random.random}"
+    response = httpx.get(url)
+    result = response.text.strip('\"').replace("\\", "")
+    print(result)
+    if result.find("ss") != -1:
+        return True
+    return False
+
+
 # 检查等级，使用背包中所有宠物使用经验道具
 # TODO: 经验道具是否用完的检查
 def levelUpPet():
@@ -288,6 +298,13 @@ while if_start or len(sub_pet_list) > 0:
     # 检查等级，使用经验道具
     levelUpPet()
     time.sleep(2)
+
+    # 进化宠物
+    pack_pet = getPetList("pack")
+    print(f"将要进化宠物:{pack_pet}")
+    for pet in pack_pet:
+        for i in range(1, 13):
+            evolvePet(pet.get('宠物序号', 0), 1)
 
     # 合成宠物
     # TODO:判断合成道具是否足够
