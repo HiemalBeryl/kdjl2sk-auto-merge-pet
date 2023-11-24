@@ -309,17 +309,25 @@ while if_start or len(sub_pet_list) > 0:
     # 合成宠物
     # TODO:判断合成道具是否足够
     while len(to_merge_sub_pet) > 0:
-        if merge_main_pet.get('成长', 0) < 111:
+        flag = False
+        print(merge_main_pet.get('成长', 0))
+        if merge_main_pet.get('成长', 0) < 57.5:
             flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0].get('宠物序号', 0), merge_property_use[0],
                             merge_property_use[1])
-        # elif merge_main_pet.get('成长', 0) >= 56.5:
-        #     flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0].get('宠物序号', 0), merge_property_use[2],
-        #                     merge_property_use[1])
+        elif merge_main_pet.get('成长', 0) >= 57.5:
+            print("使用百变！！！！！！！！！！！")
+            flag = mergePet(merge_main_pet.get('宠物序号', 0), to_merge_sub_pet[0].get('宠物序号', 0), merge_property_use[2],
+                            merge_property_use[1])
         if flag:
             # 合成成功后更新宠物背包
-            # TODO:合成后更新合成主宠
             pack_pet = getPetList('pack')
             to_merge_sub_pet.pop(0)
+            # merge_main_pet = chooseMergePet('main')
             levelUpPet()
             # TODO:判断是否出神宠(比如提前出神或百变出神)
+            # TODO:切换主宠会导致主宠不唯一的bug
+            # 使用爱蛋
+            # useProperty(exp_use[1])
+        else:
+            merge_pet_except.append(merge_main_pet.get('宠物序号', 0))
         time.sleep(4.0 + random.random() * 2)
